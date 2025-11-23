@@ -537,4 +537,53 @@ class TestCLIRunCommand: CLITest {
 
         return trimmedOutput
     }
+
+    @Test func testRunCommandCustomInitFs() throws {
+        do {
+            let name = getTestName()
+
+            let customInitFs = "ghcr.io/linuxcontainers/alpine:3.20"
+            try doLongRun(name: name, args: ["--init-fs", customInitFs])
+            defer {
+                try? doStop(name: name)
+            }
+
+            try waitForContainerRunning(name)
+            let status = try getContainerStatus(name)
+            #expect(status == "running", "expected container to be running with custom init-fs, instead got status \(status)")
+
+            let output = try doExec(name: name, cmd: ["echo", "hello"])
+            #expect(output.contains("hello"), "expected to successfully exec command using custom init-fs")
+
+            try doStop(name: name)
+        } catch {
+            Issue.record("failed to run container with custom init-fs: \(error)")
+            return
+        }
+    }
+
+    @Test func testRunCommandDefaultInitFs() throws {
+        do {
+            let name = getTestName()
+            // Test that container runs successfully when no --init-fs flag is provided (uses default)
+            try doLongRun(name: name, args: [])
+            defer {
+                try? doStop(name: name)
+            }
+
+            // Verify the container started successfully with the default init filesystem
+            try waitForContainerRunning(name)
+            let status = try getContainerStatus(name)
+            #expect(status == "running", "expected container to be running with default init-fs, instead got status \(status)")
+
+            // Verify we can exec into the container
+            let output = try doExec(name: name, cmd: ["echo", "test"])
+            #expect(output.contains("test"), "expected to successfully exec command using default init-fs")
+
+            try doStop(name: name)
+        } catch {
+            Issue.record("failed to run container with default init-fs: \(error)")
+            return
+        }
+    }
 }

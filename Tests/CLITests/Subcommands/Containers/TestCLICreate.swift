@@ -46,4 +46,48 @@ class TestCLICreateCommand: CLITest {
             #expect(inspectResp.networks[0].macAddress == expectedMAC, "expected MAC address \(expectedMAC), got \(inspectResp.networks[0].macAddress ?? "nil")")
         }
     }
+
+    @Test func testCreateWithCustomInitFs() throws {
+        let name = getTestName()
+        let customInitFs = "ghcr.io/linuxcontainers/alpine:3.20"
+        #expect(throws: Never.self, "expected container create with custom init-fs to succeed") {
+            var arguments = ["create", "--rm", "--name", name, "--init-fs", customInitFs, alpine, "echo", "test"]
+            let (_, error, status) = try run(arguments: arguments)
+            if status != 0 {
+                throw CLIError.executionFailed("command failed: \(error)")
+            }
+
+            try doStart(name: name)
+            defer {
+                try? doStop(name: name)
+                try? doRemove(name: name)
+            }
+
+            try waitForContainerRunning(name)
+            let status2 = try getContainerStatus(name)
+            #expect(status2 == "running", "expected container to be running with custom init-fs, instead got status \(status2)")
+
+            let output = try doExec(name: name, cmd: ["echo", "hello"])
+            #expect(output.contains("hello"), "expected to successfully exec command using custom init-fs")
+        }
+    }
+
+    @Test func testCreateWithDefaultInitFs() throws {
+        let name = getTestName()
+        #expect(throws: Never.self, "expected container create with default init-fs to succeed") {
+            try doCreate(name: name, args: ["sleep", "infinity"])
+            try doStart(name: name)
+            defer {
+                try? doStop(name: name)
+                try? doRemove(name: name)
+            }
+
+            try waitForContainerRunning(name)
+            let status = try getContainerStatus(name)
+            #expect(status == "running", "expected container to be running with default init-fs, instead got status \(status)")
+
+            let output = try doExec(name: name, cmd: ["echo", "test"])
+            #expect(output.contains("test"), "expected to successfully exec command using default init-fs")
+        }
+    }
 }
