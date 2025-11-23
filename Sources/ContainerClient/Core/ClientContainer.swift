@@ -73,7 +73,8 @@ extension ClientContainer {
     public static func create(
         configuration: ContainerConfiguration,
         options: ContainerCreateOptions = .default,
-        kernel: Kernel
+        kernel: Kernel,
+        initFs: Filesystem
     ) async throws -> ClientContainer {
         do {
             let client = Self.newXPCClient()
@@ -82,9 +83,11 @@ extension ClientContainer {
             let data = try JSONEncoder().encode(configuration)
             let kdata = try JSONEncoder().encode(kernel)
             let odata = try JSONEncoder().encode(options)
+            let idata = try JSONEncoder().encode(initFs)
             request.set(key: .containerConfig, value: data)
             request.set(key: .kernel, value: kdata)
             request.set(key: .containerOptions, value: odata)
+            request.set(key: .initFs, value: idata)
 
             try await xpcSend(client: client, message: request)
             return ClientContainer(configuration: configuration)

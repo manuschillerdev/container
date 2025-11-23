@@ -74,6 +74,8 @@ public enum XPCKeys: String {
     case width
     case height
     case processConfig
+    /// Init filesystem
+    case initFs
 
     /// Update progress
     case progressUpdateEndpoint

@@ -224,6 +224,27 @@ extension Application {
                 return kernel
             }()
 
+            let initFs = try await {
+                await progressUpdate([
+                    .setDescription("Fetching init image"),
+                    .setItemsName("blobs"),
+                ])
+
+                let initImage = try await ClientImage.fetch(
+                    reference: ClientImage.initImageRef,
+                    platform: .current
+                )
+
+                await progressUpdate([
+                    .setDescription("Unpacking init image"),
+                    .setItemsName("entries"),
+                ])
+
+                var fs = try await initImage.getCreateSnapshot(platform: .current)
+                fs.options = ["ro"]
+                return fs
+            }()
+
             await progressUpdate([
                 .setDescription("Starting BuildKit container")
             ])
@@ -231,7 +252,8 @@ extension Application {
             let container = try await ClientContainer.create(
                 configuration: config,
                 options: .default,
-                kernel: kernel
+                kernel: kernel,
+                initFs: initFs
             )
 
             try await container.startBuildKit(progressUpdate, taskManager)

@@ -79,7 +79,7 @@ public struct Utility {
         resource: Flags.Resource,
         registry: Flags.Registry,
         progressUpdate: @escaping ProgressUpdateHandler
-    ) async throws -> (ContainerConfiguration, Kernel) {
+    ) async throws -> (ContainerConfiguration, Kernel, Filesystem) {
         var requestedPlatform = Parser.platform(os: management.os, arch: management.arch)
         // Prefer --platform
         if let platform = management.platform {
@@ -124,7 +124,7 @@ public struct Utility {
         ])
         let fetchInitTask = await taskManager.startTask()
         let initImage = try await ClientImage.fetch(
-            reference: ClientImage.initImageRef, platform: .current, scheme: scheme,
+            reference: management.initFs ?? ClientImage.initImageRef, platform: .current, scheme: scheme,
             progressUpdate: ProgressTaskCoordinator.handler(for: fetchInitTask, from: progressUpdate))
 
         await progressUpdate([
@@ -132,9 +132,10 @@ public struct Utility {
             .setItemsName("entries"),
         ])
         let unpackInitTask = await taskManager.startTask()
-        _ = try await initImage.getCreateSnapshot(
+        var initFs = try await initImage.getCreateSnapshot(
             platform: .current,
             progressUpdate: ProgressTaskCoordinator.handler(for: unpackInitTask, from: progressUpdate))
+        initFs.options = ["ro"]
 
         await taskManager.finish()
 
@@ -227,7 +228,7 @@ public struct Utility {
 
         config.ssh = management.ssh
 
-        return (config, kernel)
+        return (config, kernel, initFs)
     }
 
     static func getAttachmentConfigurations(containerId: String, networks: [Parser.ParsedNetwork]) throws -> [AttachmentConfiguration] {

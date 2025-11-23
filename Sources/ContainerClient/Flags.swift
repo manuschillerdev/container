@@ -142,6 +142,12 @@ public struct Flags {
         )
         public var kernel: String?
 
+        @Option(
+            name: .customLong("init-fs"),
+            help: .init("Set a custom init filesystem image reference", valueName: "image")
+        )
+        public var initFs: String?
+
         @Option(name: [.short, .customLong("label")], help: "Add a key=value label to the container")
         public var labels: [String] = []
 

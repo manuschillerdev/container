@@ -179,6 +179,13 @@ public struct ContainersHarness: Sendable {
                 message: "kernel cannot be empty"
             )
         }
+        let idata = message.dataNoCopy(key: .initFs)
+        guard let idata else {
+            throw ContainerizationError(
+                .invalidArgument,
+                message: "init filesystem cannot be empty"
+            )
+        }
         let odata = message.dataNoCopy(key: .containerOptions)
         var options: ContainerCreateOptions = .default
         if let odata {
@@ -186,8 +193,9 @@ public struct ContainersHarness: Sendable {
         }
         let config = try JSONDecoder().decode(ContainerConfiguration.self, from: data)
         let kernel = try JSONDecoder().decode(Kernel.self, from: kdata)
+        let initFs = try JSONDecoder().decode(Filesystem.self, from: idata)
 
-        try await service.create(configuration: config, kernel: kernel, options: options)
+        try await service.create(configuration: config, kernel: kernel, options: options, initFs: initFs)
         return message.reply()
     }
 

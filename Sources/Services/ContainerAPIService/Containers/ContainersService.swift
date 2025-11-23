@@ -127,7 +127,7 @@ public actor ContainersService {
     }
 
     /// Create a new container from the provided id and configuration.
-    public func create(configuration: ContainerConfiguration, kernel: Kernel, options: ContainerCreateOptions) async throws {
+    public func create(configuration: ContainerConfiguration, kernel: Kernel, options: ContainerCreateOptions, initFs: Filesystem) async throws {
         self.log.debug("\(#function)")
 
         try await self.lock.withLock { context in
@@ -170,8 +170,6 @@ public actor ContainersService {
             }
 
             let path = self.containerRoot.appendingPathComponent(configuration.id)
-            let systemPlatform = kernel.platform
-            let initFs = try await self.getInitBlock(for: systemPlatform.ociPlatform())
 
             let bundle = try ContainerClient.Bundle.create(
                 path: path,
