@@ -118,3 +118,30 @@ To revert to using the Containerization dependency from your `Package.swift`:
     bin/container system stop
     bin/container system start
     ```
+
+## Troubleshooting
+
+### Force stop unresponsive container services
+
+If `bin/container system stop` hangs or doesn't respond during development, you can use the `force-stop-container.sh` helper script to forcefully terminate all container-related processes and services.
+
+This script is useful when:
+- `bin/container system stop` hangs indefinitely
+- Container services become unresponsive after a kernel panic or crash
+- You need to force-reset the development environment
+
+**Usage:**
+
+```bash
+# From the project directory
+./scripts/force-stop-container.sh
+
+# Or specify the project directory explicitly
+./scripts/force-stop-container.sh /path/to/container
+```
+
+The script will:
+1. Send SIGTERM to container processes, wait up to 5 seconds for graceful shutdown
+2. Send SIGKILL to any remaining processes
+3. Unload launchctl services
+4. Verify the apiserver is no longer registered
